@@ -1,4 +1,14 @@
-import { handleDbTest, getUsers, createUser } from './api-functions.js';
+import { 
+  handleDbTest, 
+  getUsers, 
+  createUser, 
+  createAgentSession,
+  getAgentSessions,
+  createCampaign,
+  getCampaigns,
+  createAdSet,
+  createAdCreative
+} from './api-functions.js';
 
 // Export a function that wraps around the original worker fetch function
 export function createWorkerAdapter(originalFetch) {
@@ -17,6 +27,40 @@ export function createWorkerAdapter(originalFetch) {
       
       if (request.method === 'POST') {
         return createUser(request, env);
+      }
+    }
+    
+    // Handle agent session endpoints
+    if (url.pathname === '/api/agent-sessions') {
+      if (request.method === 'GET') {
+        return getAgentSessions(request, env);
+      }
+      
+      if (request.method === 'POST') {
+        return createAgentSession(request, env);
+      }
+    }
+    
+    // Handle campaign management endpoints
+    if (url.pathname === '/api/campaigns') {
+      if (request.method === 'GET') {
+        return getCampaigns(request, env);
+      }
+      
+      if (request.method === 'POST') {
+        return createCampaign(request, env);
+      }
+    }
+    
+    if (url.pathname === '/api/ad-sets') {
+      if (request.method === 'POST') {
+        return createAdSet(request, env);
+      }
+    }
+    
+    if (url.pathname === '/api/ad-creatives') {
+      if (request.method === 'POST') {
+        return createAdCreative(request, env);
       }
     }
     
