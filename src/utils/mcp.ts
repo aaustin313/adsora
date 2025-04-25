@@ -3,80 +3,66 @@
 /**
  * Configure MCP servers for different agent capabilities
  */
-export async function configureMetaAdMcp(runnerUrl: string, metaAccessToken?: string) {
+export async function configureMcpServers(runnerUrl: string, braveApiKey?: string) {
   try {
-    const configResponse = await fetch(`${runnerUrl}/config/append`, {
+    // Define the server config type
+    type McpServerConfig = {
+      command: string;
+      args: string[];
+      env?: Record<string, string>;
+    };
+    
+    // Start with basic thinking capabilities
+    const basicConfig: Record<string, McpServerConfig> = {
+      "sequential-thinking": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-sequential-thinking"
+        ]
+      },
+      "fetch": {
+        "command": "uvx",
+        "args": [
+          "mcp-server-fetch"
+        ]
+      },
+      "time": {
+        "command": "uvx",
+        "args": [
+          "mcp-server-time"
+        ]
+      }
+    };
+    
+    // Add Brave search if API key is provided
+    if (braveApiKey) {
+      basicConfig["brave-search"] = {
+        "command": "npx",
+        "args": [
+          "-y",
+          "@modelcontextprotocol/server-brave-search"
+        ],
+        "env": {
+          "BRAVE_API_KEY": braveApiKey
+        }
+      };
+    }
+    
+    const configResponse = await fetch(`${runnerUrl}/config/update`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        'meta-ad-server': {
-          command: 'npx',
-          args: ['@passthru/cli', 'run', '@passthru/meta-ads'],
-          env: {
-            META_ACCESS_TOKEN: metaAccessToken || 'YOUR_META_ACCESS_TOKEN',
-          }
-        }
+        mcpServers: basicConfig
       })
     });
     
     return await configResponse.json();
   } catch (error) {
-    console.error('Error configuring Meta Ad MCP:', error);
-    throw error;
-  }
-}
-
-export async function configureSlackMcp(runnerUrl: string, slackAccessToken?: string) {
-  try {
-    const configResponse = await fetch(`${runnerUrl}/config/append`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        'slack-server': {
-          command: 'npx',
-          args: ['@passthru/cli', 'run', '@passthru/slack'],
-          env: {
-            SLACK_BOT_TOKEN: slackAccessToken || 'YOUR_SLACK_TOKEN',
-          }
-        }
-      })
-    });
-    
-    return await configResponse.json();
-  } catch (error) {
-    console.error('Error configuring Slack MCP:', error);
-    throw error;
-  }
-}
-
-export async function configureGDriveMcp(runnerUrl: string, googleCredentials?: string) {
-  try {
-    const configResponse = await fetch(`${runnerUrl}/config/append`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify({
-        'gdrive-server': {
-          command: 'npx',
-          args: ['@passthru/cli', 'run', '@passthru/gdrive'],
-          env: {
-            GOOGLE_APPLICATION_CREDENTIALS: googleCredentials || 'YOUR_GOOGLE_CREDENTIALS_JSON',
-          }
-        }
-      })
-    });
-    
-    return await configResponse.json();
-  } catch (error) {
-    console.error('Error configuring Google Drive MCP:', error);
+    console.error('Error configuring MCP servers:', error);
     throw error;
   }
 }

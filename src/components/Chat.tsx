@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { configureMetaAdMcp, configureSlackMcp, configureGDriveMcp, callMcpTool } from '@/utils/mcp';
+import { configureMcpServers, callMcpTool } from '@/utils/mcp';
 
 type Message = {
   id: string;
@@ -97,21 +97,15 @@ export default function Chat({ sessionId: initialSessionId, userId, onCreateSess
   
   useEffect(() => {
     // Configure MCP servers when runner URL is available
-    const configureMcpServers = async () => {
+    const configureAgent = async () => {
       if (runnerUrl && !isConfigured) {
         setIsLoading(true);
         try {
-          // Configure Meta Ads MCP
-          await configureMetaAdMcp(runnerUrl);
-          
-          // Configure Slack MCP
-          await configureSlackMcp(runnerUrl);
-          
-          // Configure Google Drive MCP
-          await configureGDriveMcp(runnerUrl);
+          // Configure MCP servers with basic capabilities
+          await configureMcpServers(runnerUrl);
           
           setIsConfigured(true);
-          addMessage('assistant', 'I\'m now ready to help you with Meta ads, Slack integration, and file uploads from Google Drive.');
+          addMessage('assistant', 'I\'m now ready to help you! You can ask me about creating ad campaigns or general questions.');
         } catch (error) {
           console.error('Error configuring MCP servers:', error);
           addMessage('assistant', 'I\'m having trouble setting up some of my capabilities. I\'ll do my best with what\'s available.');
@@ -121,7 +115,7 @@ export default function Chat({ sessionId: initialSessionId, userId, onCreateSess
       }
     };
     
-    configureMcpServers();
+    configureAgent();
   }, [runnerUrl, isConfigured]);
   
   const addMessage = (role: 'user' | 'assistant', content: string) => {
@@ -145,35 +139,13 @@ export default function Chat({ sessionId: initialSessionId, userId, onCreateSess
     setIsLoading(true);
     
     try {
-      // Based on the user input, decide which tool to call
-      // This is a simplistic approach for the MVP - in a real implementation
-      // you would use more sophisticated NLP to route to the correct tool
-      let toolName = 'default_conversation';
-      let params: ToolParams = { query: userInput };
-      
-      if (userInput.toLowerCase().includes('ad') || 
-          userInput.toLowerCase().includes('campaign') || 
-          userInput.toLowerCase().includes('meta')) {
-        toolName = 'meta_ad_interaction';
-        params = { 
-          query: userInput,
-          userId: userId
-        };
-      } else if (userInput.toLowerCase().includes('slack')) {
-        toolName = 'slack_interaction';
-        params = { 
-          query: userInput,
-          userId: userId
-        };
-      } else if (userInput.toLowerCase().includes('drive') || 
-                userInput.toLowerCase().includes('file') || 
-                userInput.toLowerCase().includes('upload')) {
-        toolName = 'gdrive_interaction';
-        params = { 
-          query: userInput,
-          userId: userId
-        };
-      }
+      // We'll use sequential-thinking for all queries
+      const toolName = "sequential-thinking";
+      const params = { 
+        query: userInput,
+        context: `The user is working with AdSora, an ad management platform for creating Meta (Facebook) ads. 
+                 User ID: ${userId}`
+      };
       
       // Call the selected tool using our utility function
       const data = await callMcpTool(runnerUrl, toolName, params) as ToolResponse;
