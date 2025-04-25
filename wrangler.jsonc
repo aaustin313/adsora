@@ -5,6 +5,13 @@
   "compatibility_flags": ["nodejs_compat"],
   "minify": true,
   "domain": "app.adsora.com",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "adsora-db",
+      "database_id": "f48894b7-41a4-4a4f-b119-f4bd40bda55b"
+    }
+  ],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
@@ -12,5 +19,8 @@
   "observability": {
     "enabled": true
   },
-  "upload_source_maps": true
+  "upload_source_maps": true,
+  "dev": {
+    "port": 3000
+  }
 }
