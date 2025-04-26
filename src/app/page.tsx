@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import Image from 'next/image';
 import Chat from '@/components/Chat';
 import Campaign from '@/components/Campaign';
+import { createMockMcpSession, isDevelopmentMode } from '@/utils/dev-utils';
 
 type User = {
   id: string;
@@ -43,7 +44,7 @@ export default function Home() {
   const [userName, setUserName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'chat' | 'campaign'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'campaign' | 'settings'>('chat');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +54,13 @@ export default function Home() {
     setIsLoading(true);
     
     try {
+      if (isDevelopmentMode()) {
+        // Mock user creation in development mode
+        setUserId(`user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`);
+        setIsLoading(false);
+        return;
+      }
+      
       // Create a user
       const response = await fetch('/api/users', {
         method: 'POST',
@@ -72,7 +80,7 @@ export default function Home() {
       } else {
         // If user already exists, try to fetch the user
         const usersResponse = await fetch('/api/users');
-        const usersData = await usersResponse.json() as UsersResponse;
+        const usersData = await response.json() as UsersResponse;
         
         if (usersData.success && usersData.users.length > 0) {
           // Find a user with matching email
@@ -95,6 +103,12 @@ export default function Home() {
     if (!userId) return '';
     
     try {
+      if (isDevelopmentMode()) {
+        // Create a mock session in development mode
+        const mockSession = createMockMcpSession(userId);
+        return mockSession.id;
+      }
+      
       const response = await fetch('/api/agent-sessions', {
         method: 'POST',
         headers: {
@@ -216,6 +230,16 @@ export default function Home() {
                 >
                   Campaign Management
                 </button>
+                <button
+                  onClick={() => setActiveTab('settings')}
+                  className={`${
+                    activeTab === 'settings'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+                >
+                  Settings
+                </button>
               </nav>
             </div>
             
@@ -232,6 +256,96 @@ export default function Home() {
               
               {activeTab === 'campaign' && (
                 <Campaign userId={userId} />
+              )}
+              
+              {activeTab === 'settings' && (
+                <div className="bg-white shadow-md rounded-lg p-6">
+                  <h2 className="text-2xl font-bold mb-6">Settings</h2>
+                  
+                  {/* Integrations */}
+                  <div className="mb-8">
+                    <h3 className="text-xl font-semibold mb-4">Integrations</h3>
+                    
+                    {/* Slack Integration */}
+                    <div className="mb-6 p-4 border rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="font-medium">Slack Integration</h4>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Connect your Slack workspace to send notifications and launch campaigns directly from Slack.
+                          </p>
+                        </div>
+                        <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                          Connect Slack
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Google Drive Integration */}
+                    <div className="mb-6 p-4 border rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="font-medium">Google Drive Integration</h4>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Access your Google Drive files to use as creatives in your ad campaigns.
+                          </p>
+                        </div>
+                        <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                          Connect Drive
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Meta Ads Integration */}
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="font-medium">Meta Ads Integration</h4>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Connect your Meta Ads account to create and manage campaigns.
+                          </p>
+                        </div>
+                        <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                          Connect Meta Ads
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* API Keys */}
+                  <div className="mb-8">
+                    <h3 className="text-xl font-semibold mb-4">API Keys</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label htmlFor="metaApiKey" className="block text-sm font-medium text-gray-700">
+                          Meta API Key
+                        </label>
+                        <input
+                          type="password"
+                          id="metaApiKey"
+                          placeholder="Enter your Meta API key"
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="slackApiKey" className="block text-sm font-medium text-gray-700">
+                          Slack API Key
+                        </label>
+                        <input
+                          type="password"
+                          id="slackApiKey"
+                          placeholder="Enter your Slack API key"
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                        />
+                      </div>
+                      
+                      <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                        Save API Keys
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </div>

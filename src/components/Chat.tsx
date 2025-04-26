@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { configureMcpServers, callMcpTool } from '@/utils/mcp';
+import { mockConfigureMcpServers, mockMcpToolCall, isDevelopmentMode, createMockMcpSession } from '@/utils/dev-utils';
 
 type Message = {
   id: string;
@@ -28,6 +29,7 @@ type SessionResponse = {
 type ToolParams = {
   query: string;
   userId?: string;
+  context?: string;
 };
 
 type ToolResponse = {
@@ -72,15 +74,21 @@ export default function Chat({ sessionId: initialSessionId, userId, onCreateSess
           const newSessionId = await onCreateSession();
           setSessionId(newSessionId);
           
-          // Fetch the session details to get the runner URL
-          const response = await fetch(`/api/agent-sessions?userId=${userId}`);
-          const data = await response.json() as SessionResponse;
-          
-          if (data.success && data.sessions.length > 0) {
-            // Find the session we just created
-            const session = data.sessions.find((s) => s.id === newSessionId);
-            if (session) {
-              setRunnerUrl(session.mcp_runner_url);
+          if (isDevelopmentMode()) {
+            // In development mode, use mocked session data
+            const mockSession = createMockMcpSession(userId);
+            setRunnerUrl(mockSession.mcp_runner_url);
+          } else {
+            // In production, fetch from API
+            const response = await fetch(`/api/agent-sessions?userId=${userId}`);
+            const data = await response.json() as SessionResponse;
+            
+            if (data.success && data.sessions.length > 0) {
+              // Find the session we just created
+              const session = data.sessions.find((s) => s.id === newSessionId);
+              if (session) {
+                setRunnerUrl(session.mcp_runner_url);
+              }
             }
           }
         } catch (error) {
@@ -101,8 +109,13 @@ export default function Chat({ sessionId: initialSessionId, userId, onCreateSess
       if (runnerUrl && !isConfigured) {
         setIsLoading(true);
         try {
-          // Configure MCP servers with basic capabilities
-          await configureMcpServers(runnerUrl);
+          if (isDevelopmentMode()) {
+            // In development mode, use mocked configuration
+            await mockConfigureMcpServers();
+          } else {
+            // In production, use real MCP
+            await configureMcpServers(runnerUrl);
+          }
           
           setIsConfigured(true);
           addMessage('assistant', 'I\'m now ready to help you! You can ask me about creating ad campaigns or general questions.');
@@ -141,14 +154,22 @@ export default function Chat({ sessionId: initialSessionId, userId, onCreateSess
     try {
       // We'll use sequential-thinking for all queries
       const toolName = "sequential-thinking";
-      const params = { 
+      const params: ToolParams = { 
         query: userInput,
         context: `The user is working with AdSora, an ad management platform for creating Meta (Facebook) ads. 
                  User ID: ${userId}`
       };
       
       // Call the selected tool using our utility function
-      const data = await callMcpTool(runnerUrl, toolName, params) as ToolResponse;
+      let data: ToolResponse;
+      
+      if (isDevelopmentMode()) {
+        // In development mode, use mocked tool call
+        data = await mockMcpToolCall(toolName, params);
+      } else {
+        // In production, use real MCP
+        data = await callMcpTool(runnerUrl, toolName, params) as ToolResponse;
+      }
       
       // Add the assistant's response
       addMessage('assistant', data.response || 'I\'m having trouble processing your request right now.');
@@ -165,7 +186,11 @@ export default function Chat({ sessionId: initialSessionId, userId, onCreateSess
     <div className="flex flex-col h-full bg-gray-50 rounded-lg overflow-hidden shadow-lg">
       <div className="bg-blue-600 text-white p-4">
         <h2 className="text-xl font-semibold">AdSora AI Agent</h2>
-        <p className="text-sm opacity-80">Powered by MCP</p>
+        <p className="text-sm opacity-80">
+          {isDevelopmentMode() 
+            ? "Powered by MCP (Development Mode)" 
+            : "Powered by MCP"}
+        </p>
       </div>
       
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
