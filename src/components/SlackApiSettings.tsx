@@ -109,7 +109,7 @@ export default function SlackApiSettings({ userId }: SlackApiSettingsProps) {
               Connect your Slack workspace to AdSora to integrate with Slack channels and manage messaging.
             </p>
             <p className="text-sm text-gray-600 mb-6">
-              After connecting, you'll be able to:
+              After connecting, you&apos;ll be able to:
             </p>
             <ul className="list-disc pl-5 mb-6 text-sm text-gray-600 space-y-1">
               <li>Send messages from AdSora to Slack channels</li>
