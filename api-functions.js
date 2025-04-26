@@ -141,8 +141,6 @@ export async function getSlackSettings(request, env) {
       settings: {
         appId: 'A08PW7NLAHG',
         clientId: '5511322808822.8812260690594',
-        appToken: 'xapp-1-******-******-******',
-        verificationToken: '••••••••••',
         installUrl: `https://slack.com/oauth/v2/authorize?client_id=5511322808822.8812260690594&scope=channels:read,chat:write&user_scope=`
       }
     }), {

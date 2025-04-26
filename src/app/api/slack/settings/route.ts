@@ -4,9 +4,6 @@ import { NextResponse } from 'next/server';
 // and stored in a database associated with the user
 const SLACK_APP_ID = 'A08PW7NLAHG';
 const SLACK_CLIENT_ID = '5511322808822.8812260690594';
-// Using masked placeholders instead of real tokens
-const SLACK_APP_TOKEN_MASKED = 'xapp-1-******-******-******';
-const SLACK_VERIFICATION_TOKEN_MASKED = '••••••••••';
 
 export async function GET(request: Request) {
   try {
@@ -27,9 +24,6 @@ export async function GET(request: Request) {
       settings: {
         appId: SLACK_APP_ID,
         clientId: SLACK_CLIENT_ID,
-        // Only show masked tokens for security
-        appToken: SLACK_APP_TOKEN_MASKED,
-        verificationToken: SLACK_VERIFICATION_TOKEN_MASKED,
         installUrl: `https://slack.com/oauth/v2/authorize?client_id=${SLACK_CLIENT_ID}&scope=channels:read,chat:write&user_scope=`
       }
     });
